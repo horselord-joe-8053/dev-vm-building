@@ -40,10 +40,10 @@ Outputs will include:
 ./scripts/teardown/teardown.sh gcp
 ```
 
-**Or use the combined setup-monitor-show script:**
+**Or use the combined setup-monitor-show-installpost script:**
 ```bash
 # AWS - Setup, monitor installation, and show access info
-./scripts/setup-monitor-show.sh aws
+./scripts/setup-monitor-show-installpost.sh aws
 
 # Teardown and monitor termination
 ./scripts/teardown-and-monitor.sh aws
