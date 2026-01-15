@@ -124,6 +124,14 @@ resource "aws_instance" "this" {
     }
   }
 
+  # Timeouts: Spot instances can take time to fulfill, and user_data script
+  # installs many packages (Python, Node, Docker, etc.) which can take 5-10 minutes
+  timeouts {
+    create = "20m"  # Allow up to 20 minutes for instance creation
+    update = "10m"
+    delete = "10m"
+  }
+
   tags = {
     Name = "${var.name_prefix}-vm"
   }
