@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Setup infrastructure, monitor installation progress, and show access information
+# Setup infrastructure, monitor installation progress, show access information, and install GUI tools
 # Usage:
-#   ./scripts/setup-monitor-show.sh aws
-#   ./scripts/setup-monitor-show.sh gcp
+#   ./scripts/setup-monitor-show-installpost.sh aws
+#   ./scripts/setup-monitor-show-installpost.sh gcp
 
 set -euo pipefail
 
