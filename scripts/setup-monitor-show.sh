@@ -122,5 +122,17 @@ echo "════════════════════════�
 echo ""
 
 # Show access information
-"${ROOT_DIR}/scripts/show-access-info.sh" "${PROVIDER}"
+"${ROOT_DIR}/scripts/vm/show-access-info.sh" "${PROVIDER}"
 
+
+# Optionally install GUI tools (Chrome + Cursor) after core setup is done
+if [ "${PROVIDER}" = "aws" ]; then
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "Installing GUI tools (Chrome + Cursor) on the VM..."
+  echo "════════════════════════════════════════════════════════════════"
+  echo ""
+  if ! "${ROOT_DIR}/scripts/vm/install-gui-tools.sh" "${PROVIDER}"; then
+    echo "Warning: GUI tools installation failed. Core VM setup is still complete." >&2
+  fi
+fi

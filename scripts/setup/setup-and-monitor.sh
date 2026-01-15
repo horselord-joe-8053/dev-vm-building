@@ -112,7 +112,7 @@ echo "Press Ctrl+C to stop monitoring (this will NOT stop the installation)"
 echo ""
 
 # Run monitor script (which will tail the logs)
-"${ROOT_DIR}/scripts/monitor-installation.sh" "${PROVIDER}"
+"${ROOT_DIR}/scripts/monitor/monitor-installation.sh" "${PROVIDER}"
 
 # After monitoring completes, show access information
 echo ""
@@ -122,5 +122,5 @@ echo "════════════════════════�
 echo ""
 
 # Show access information
-"${ROOT_DIR}/scripts/show-access-info.sh" "${PROVIDER}"
+"${ROOT_DIR}/scripts/vm/show-access-info.sh" "${PROVIDER}"
 

@@ -46,7 +46,7 @@ Outputs will include:
 ./scripts/setup-monitor-show.sh aws
 
 # Teardown and monitor termination
-./scripts/teardown/teardown-and-monitor.sh aws
+./scripts/teardown-and-monitor.sh aws
 ```
 
 ## RDP
