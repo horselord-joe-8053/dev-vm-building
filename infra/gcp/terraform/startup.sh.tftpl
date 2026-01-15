@@ -1,0 +1,234 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+log() { echo "[$(date -Is)] $*"; }
+
+DEV_USER="${dev_username}"
+DEV_PASS="${rdp_password}"
+
+GIT_VER="${git_version}"
+PY_VER="${python_version}"
+NODE_VER="${node_version}"
+NPM_VER="${npm_version}"
+DOCKER_VER_PREFIX="${docker_version_prefix}"
+AWSCLI_VER="${awscli_version}"
+PSQL_MAJOR="${psql_major}"
+CURSOR_CHANNEL="${cursor_channel}"
+
+# Idempotency marker (safe to re-run)
+MARKER="/var/local/bootstrap_done_v1"
+
+log "Updating apt indexes..."
+apt-get update -y
+
+log "Installing base packages..."
+apt-get install -y --no-install-recommends \
+  ca-certificates curl wget gnupg lsb-release unzip \
+  build-essential pkg-config \
+  software-properties-common \
+  xauth dbus-x11 \
+  xfce4 xfce4-goodies \
+  xrdp \
+  git \
+  jq
+
+# --- Create user (idempotent) ---
+if id "$${DEV_USER}" >/dev/null 2>&1; then
+  log "User $${DEV_USER} exists."
+else
+  log "Creating user $${DEV_USER}..."
+  adduser --disabled-password --gecos "" "$${DEV_USER}"
+fi
+
+log "Setting password for $${DEV_USER} (required for RDP)..."
+echo "$${DEV_USER}:$${DEV_PASS}" | chpasswd
+
+# Ensure xrdp uses Xorg / XFCE session
+log "Configuring xRDP + XFCE..."
+if [ ! -f "/home/$${DEV_USER}/.xsession" ]; then
+  echo "xfce4-session" > "/home/$${DEV_USER}/.xsession"
+  chown "$${DEV_USER}:$${DEV_USER}" "/home/$${DEV_USER}/.xsession"
+fi
+
+systemctl enable xrdp
+systemctl restart xrdp
+
+# --- Git (best effort for exact) ---
+# Ubuntu apt may not have exactly the requested version; we verify and log.
+log "Git installed version: $(git --version || true) (desired prefix: $${GIT_VER})"
+
+# --- Python via pyenv (exact) ---
+log "Installing pyenv dependencies..."
+apt-get install -y --no-install-recommends \
+  make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+  llvm libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev
+
+PYENV_ROOT="/opt/pyenv"
+if [ ! -d "$${PYENV_ROOT}" ]; then
+  log "Cloning pyenv..."
+  git clone https://github.com/pyenv/pyenv.git "$${PYENV_ROOT}"
+fi
+
+if ! grep -q "PYENV_ROOT" /etc/profile.d/pyenv.sh 2>/dev/null; then
+  cat >/etc/profile.d/pyenv.sh <<'EOF'
+export PYENV_ROOT="/opt/pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+EOF
+fi
+
+# shellcheck disable=SC1091
+source /etc/profile.d/pyenv.sh
+
+if pyenv versions --bare | grep -q "^$${PY_VER}$"; then
+  log "Python $${PY_VER} already installed via pyenv."
+else
+  log "Installing Python $${PY_VER} via pyenv (this can take a bit)..."
+  pyenv install -s "$${PY_VER}"
+fi
+
+pyenv global "$${PY_VER}"
+python --version || true
+
+# --- Node via nvm (exact) ---
+NVM_DIR="/opt/nvm"
+if [ ! -d "$${NVM_DIR}" ]; then
+  log "Installing nvm..."
+  mkdir -p "$${NVM_DIR}"
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | NVM_DIR="$${NVM_DIR}" bash
+fi
+
+if ! grep -q "NVM_DIR=/opt/nvm" /etc/profile.d/nvm.sh 2>/dev/null; then
+  cat >/etc/profile.d/nvm.sh <<'EOF'
+export NVM_DIR="/opt/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+EOF
+fi
+
+# shellcheck disable=SC1091
+source /etc/profile.d/nvm.sh
+
+if nvm ls "$${NODE_VER}" | grep -q "$${NODE_VER}"; then
+  log "Node $${NODE_VER} already installed."
+else
+  log "Installing Node $${NODE_VER}..."
+  nvm install "$${NODE_VER}"
+fi
+
+nvm alias default "$${NODE_VER}"
+nvm use default
+
+node --version || true
+
+log "Installing npm@$${NPM_VER}..."
+npm install -g "npm@$${NPM_VER}"
+npm --version || true
+
+# --- Docker Engine (best effort pin) ---
+log "Installing Docker Engine (best effort pin $${DOCKER_VER_PREFIX})..."
+if ! command -v docker >/dev/null 2>&1; then
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+    > /etc/apt/sources.list.d/docker.list
+
+  apt-get update -y
+
+  # Try to install a matching version if available; otherwise fall back to latest.
+  CANDIDATE="$(apt-cache madison docker-ce | awk '{print $3}' | grep -m1 "$${DOCKER_VER_PREFIX}" || true)"
+  if [ -n "$${CANDIDATE}" ]; then
+    log "Installing docker-ce version $${CANDIDATE}"
+    apt-get install -y docker-ce="$${CANDIDATE}" docker-ce-cli="$${CANDIDATE}" containerd.io docker-buildx-plugin docker-compose-plugin
+  else
+    log "No exact match found for $${DOCKER_VER_PREFIX}; installing latest from Docker repo."
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  fi
+else
+  log "Docker already installed."
+fi
+
+systemctl enable docker
+systemctl restart docker
+
+# Allow dev user to run docker without sudo (requires re-login for group membership)
+if getent group docker >/dev/null 2>&1; then
+  usermod -aG docker "$${DEV_USER}" || true
+fi
+
+# Add dev user to sudo group for administrative access
+log "Adding $${DEV_USER} to sudo group..."
+usermod -aG sudo "$${DEV_USER}" || true
+
+docker --version || true
+
+# --- AWS CLI v2 (exact, from AWS) ---
+log "Installing AWS CLI v2 ($${AWSCLI_VER})..."
+if command -v aws >/dev/null 2>&1 && aws --version 2>&1 | grep -q "$${AWSCLI_VER}"; then
+  log "AWS CLI $${AWSCLI_VER} already installed."
+else
+  TMPDIR="$(mktemp -d)"
+  cd "$${TMPDIR}"
+  # Official AWS docs describe installing past releases by using a versioned URL / bundle.
+  # We use the versioned zip pattern here:
+  curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-$${AWSCLI_VER}.zip" -o "awscliv2.zip"
+  unzip -q awscliv2.zip
+  ./aws/install --update
+  rm -rf "$${TMPDIR}"
+fi
+aws --version || true
+
+# --- psql (PostgreSQL client) ---
+log "Installing PostgreSQL client (major $${PSQL_MAJOR})..."
+if command -v psql >/dev/null 2>&1; then
+  log "psql already installed: $(psql --version || true)"
+else
+  install -d /usr/share/postgresql-common/pgdg
+  curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
+  sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+  apt-get update -y
+  apt-get install -y "postgresql-client-$${PSQL_MAJOR}"
+fi
+psql --version || true
+
+# --- Cursor (AppImage) ---
+log "Installing Cursor (AppImage, channel=$${CURSOR_CHANNEL})..."
+CURSOR_DIR="/opt/cursor"
+CURSOR_APP="$${CURSOR_DIR}/cursor.AppImage"
+mkdir -p "$${CURSOR_DIR}"
+
+# Cursor provides AppImage downloads; a stable direct version-pinned URL is not guaranteed.
+# We'll download the current x64 AppImage and install a launcher.
+if [ ! -f "$${CURSOR_APP}" ]; then
+  curl -L -o "$${CURSOR_APP}" "https://downloader.cursor.sh/linux/appImage/x64"
+  chmod +x "$${CURSOR_APP}"
+fi
+
+cat >/usr/local/bin/cursor <<'EOF'
+#!/usr/bin/env bash
+exec /opt/cursor/cursor.AppImage "$@"
+EOF
+chmod +x /usr/local/bin/cursor
+
+# GUI/desktop entry (optional)
+if [ ! -f /usr/share/applications/cursor.desktop ]; then
+  cat >/usr/share/applications/cursor.desktop <<'EOF'
+[Desktop Entry]
+Name=Cursor
+Exec=/opt/cursor/cursor.AppImage
+Terminal=false
+Type=Application
+Categories=Development;IDE;
+EOF
+fi
+
+# Cursor version output requires GUI deps; we just attempt it
+(cursor --version || true) 2>/dev/null || true
+
+log "Bootstrap complete."
+touch "$${MARKER}"

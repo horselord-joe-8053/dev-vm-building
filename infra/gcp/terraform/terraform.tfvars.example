@@ -1,0 +1,13 @@
+project_id = "YOUR_GCP_PROJECT_ID"
+region = "us-central1"
+zone   = "us-central1-a"
+
+name_prefix = "james-ubuntu-gui"
+allowed_cidr = "0.0.0.0/0"
+
+machine_type = "e2-standard-2"
+boot_disk_gb = 80
+use_spot = true
+
+dev_username = "dev"
+rdp_password = "CHANGE_ME_STRONG_PASSWORD"

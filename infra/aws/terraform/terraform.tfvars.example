@@ -1,0 +1,29 @@
+# ---- Networking / access ----
+aws_region   = "us-east-1"
+name_prefix  = "james-ubuntu-gui"
+
+# Lock this down to your IP (recommended):
+# Find it via: curl ifconfig.me
+allowed_cidr = "0.0.0.0/0"
+
+# ---- Hardware ----
+instance_type   = "t3.large"  # 2 vCPU, 8 GiB
+root_volume_gb  = 80
+
+# ---- Spot ----
+use_spot       = true
+spot_max_price = ""  # optional
+
+# ---- RDP user ----
+dev_username   = "dev"
+rdp_password   = "CHANGE_ME_STRONG_PASSWORD"
+
+# ---- Toolchain versions (best effort) ----
+git_version            = "2.39.2"
+python_version         = "3.11.13"
+node_version           = "v23.5.0"
+npm_version            = "11.6.0"
+docker_version_prefix  = "28.4.0"
+awscli_version         = "2.32.16"
+psql_major             = 16
+cursor_channel         = "stable"
