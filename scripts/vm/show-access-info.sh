@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Show access information for the provisioned VM
-# Usage: ./scripts/show-access-info.sh <provider>
+# Usage: ./scripts/vm/show-access-info.sh <provider>
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Source required libraries
 source "${ROOT_DIR}/scripts/lib/env_loader.sh"
