@@ -6,7 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 source "${ROOT_DIR}/scripts/lib/env_loader.sh"
 source "${ROOT_DIR}/scripts/lib/common.sh"
@@ -115,17 +115,27 @@ fi
 #####################
 # Cursor (.deb)
 #####################
-log "Installing Cursor (deb)..."
-TMP_CURSOR_DEB="/tmp/cursor.deb"
-if [ ! -f "${TMP_CURSOR_DEB}" ]; then
-  wget -O "${TMP_CURSOR_DEB}" "https://api2.cursor.sh/updates/download/golden/linux-x64-deb/cursor/2.3"
-fi
-if [ -f "${TMP_CURSOR_DEB}" ]; then
-  sudo apt install -y "${TMP_CURSOR_DEB}" || sudo apt-get -f install -y
-  # keep the deb around only if needed; otherwise clean up
-  rm -f "${TMP_CURSOR_DEB}" || true
+if command -v cursor >/dev/null 2>&1; then
+  log "Cursor already installed: $(cursor --version 2>/dev/null || echo "")"
 else
-  log "Warning: Failed to download Cursor .deb; skipping Cursor installation."
+  log "Installing Cursor (deb)..."
+  TMP_CURSOR_DEB="/tmp/cursor.deb"
+  if [ ! -f "${TMP_CURSOR_DEB}" ]; then
+    wget -O "${TMP_CURSOR_DEB}" "https://api2.cursor.sh/updates/download/golden/linux-x64-deb/cursor/2.3"
+  fi
+  if [ -f "${TMP_CURSOR_DEB}" ]; then
+    # Auto-answer "yes" to the repository prompt
+    echo "yes" | sudo DEBIAN_FRONTEND=noninteractive apt install -y "${TMP_CURSOR_DEB}" || sudo apt-get -f install -y
+    # keep the deb around only if needed; otherwise clean up
+    rm -f "${TMP_CURSOR_DEB}" || true
+    if command -v cursor >/dev/null 2>&1; then
+      log "Cursor installed: $(cursor --version 2>/dev/null || echo "")"
+    else
+      log "Warning: Cursor installation did not complete successfully."
+    fi
+  else
+    log "Warning: Failed to download Cursor .deb; skipping Cursor installation."
+  fi
 fi
 
 log "GUI tools installation script completed."
