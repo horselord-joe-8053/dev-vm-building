@@ -11,8 +11,8 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 source "${ROOT_DIR}/scripts/lib/env_loader.sh"
 source "${ROOT_DIR}/scripts/lib/common.sh"
 
-log() { echo "[$(date -Is)] $*" >&2; }
-error() { echo "[$(date -Is)] ERROR: $*" >&2; exit 1; }
+log() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] $*" >&2; }
+error() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] ERROR: $*" >&2; exit 1; }
 
 if [ "$#" -lt 1 ]; then
   error "Usage: $0 <provider>"
@@ -85,7 +85,26 @@ ssh -i "${SSH_KEY}" \
     "ubuntu@${VM_IP}" <<'EOF_VM'
 set -euo pipefail
 
-log() { echo "[$(date -Is)] $*" >&2; }
+log() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] $*" >&2; }
+
+# Wait for apt lock to be released
+wait_for_apt_lock() {
+  local max_wait=300  # 5 minutes
+  local elapsed=0
+  while [ ${elapsed} -lt ${max_wait} ]; do
+    if ! sudo lsof /var/lib/dpkg/lock-frontend >/dev/null 2>&1 && ! sudo lsof /var/lib/dpkg/lock >/dev/null 2>&1; then
+      return 0
+    fi
+    log "Waiting for apt lock to be released (${elapsed}s)..."
+    sleep 5
+    elapsed=$((elapsed + 5))
+  done
+  log "Warning: apt lock wait timeout, proceeding anyway..."
+  return 0
+}
+
+log "Waiting for apt lock to be available..."
+wait_for_apt_lock
 
 log "Updating apt indexes..."
 sudo apt-get update -y
@@ -100,6 +119,7 @@ if command -v google-chrome >/dev/null 2>&1; then
   log "Google Chrome already installed: $(google-chrome --version 2>/dev/null || echo "")"
 else
   log "Installing Google Chrome (stable)..."
+  wait_for_apt_lock
   cd /tmp
   wget "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
   sudo apt update -y
@@ -119,6 +139,7 @@ if command -v cursor >/dev/null 2>&1; then
   log "Cursor already installed: $(cursor --version 2>/dev/null || echo "")"
 else
   log "Installing Cursor (deb)..."
+  wait_for_apt_lock
   TMP_CURSOR_DEB="/tmp/cursor.deb"
   if [ ! -f "${TMP_CURSOR_DEB}" ]; then
     wget -O "${TMP_CURSOR_DEB}" "https://api2.cursor.sh/updates/download/golden/linux-x64-deb/cursor/2.3"
