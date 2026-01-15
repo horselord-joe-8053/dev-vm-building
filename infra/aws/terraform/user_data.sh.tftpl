@@ -72,7 +72,7 @@ cat > "/home/$${DEV_USER}/.bashrc" <<'EOF'
 if [ -z "$DISPLAY" ]; then
   for d in /tmp/.X11-unix/X*; do
     if [ -S "$d" ]; then
-      export DISPLAY=:${d##*X}
+      export DISPLAY=:$${d##*X}
       break
     fi
   done
