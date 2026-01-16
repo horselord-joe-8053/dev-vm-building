@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Teardown infrastructure and monitor termination progress
 # Usage:
-#   ./scripts/teardown-and-monitor.sh aws
-#   ./scripts/teardown-and-monitor.sh gcp
+#   ./scripts/vm/teardown-and-monitor.sh aws
+#   ./scripts/vm/teardown-and-monitor.sh gcp
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Source orchestrator (which sources all required libraries)
 source "${ROOT_DIR}/scripts/lib/orchestrator.sh"

@@ -38,25 +38,54 @@ show_aws_access() {
   AWS_REGION="${AWS_REGION:-us-east-1}"
   
   echo "Finding AWS instance..."
-  INSTANCE_DATA=$(aws ec2 describe-instances \
+  # Strategy: Two-step approach to avoid AWS CLI caching issues
+  # Step 1: Find instance ID by tag (this query is less likely to be cached)
+  # Step 2: Query by instance ID directly to get current IP (forces fresh query, bypasses cache)
+  # This ensures we get the correct IP even after spot restarts (IP changes but instance ID persists)
+  
+  # Step 1: Get instance ID(s) by tag, take the first/most recent one
+  TMP_INSTANCE_IDS=$(mktemp)
+  aws ec2 describe-instances \
     --profile "${AWS_PROFILE}" \
     --region "${AWS_REGION}" \
-    --filters "Name=instance-state-name,Values=running,stopping,pending,stopped" \
-               "Name=tag:Name,Values=${NAME_PREFIX}-vm" \
-    --query "Reservations[0].Instances[0].[InstanceId,PublicIpAddress,State.Name]" \
-    --output text 2>/dev/null || echo "")
+    --filters "Name=tag:Name,Values=${NAME_PREFIX}-vm" \
+    --query "Reservations[*].Instances[*].[InstanceId,LaunchTime]" \
+    --output text --no-cli-pager 2>/dev/null | sort -k2,2r | awk '{print $1}' > "${TMP_INSTANCE_IDS}" || true
   
-  if [ -z "${INSTANCE_DATA}" ] || [ "${INSTANCE_DATA}" = "None	None	None" ]; then
+  INSTANCE_ID=$(head -1 "${TMP_INSTANCE_IDS}" 2>/dev/null | grep -v "^$" || echo "")
+  rm -f "${TMP_INSTANCE_IDS}"
+  
+  # Step 2: Query by instance ID directly to get current IP (forces fresh query)
+  if [ -n "${INSTANCE_ID}" ] && [ "${INSTANCE_ID}" != "None" ]; then
+    INSTANCE_DATA=$(aws ec2 describe-instances \
+      --profile "${AWS_PROFILE}" \
+      --region "${AWS_REGION}" \
+      --instance-ids "${INSTANCE_ID}" \
+      --query "Reservations[0].Instances[0].[InstanceId,State.Name,PublicIpAddress]" \
+      --output text --no-cli-pager 2>/dev/null || echo "")
+    
+    if [ -n "${INSTANCE_DATA}" ] && ! echo "${INSTANCE_DATA}" | grep -q "^None"; then
+      INSTANCE_ID=$(echo "${INSTANCE_DATA}" | awk '{print $1}')
+      STATE=$(echo "${INSTANCE_DATA}" | awk '{print $2}')
+      PUBLIC_IP=$(echo "${INSTANCE_DATA}" | awk '{print $3}')
+    else
+      INSTANCE_ID=""
+      STATE=""
+      PUBLIC_IP=""
+    fi
+  else
+    INSTANCE_ID=""
+    STATE=""
+    PUBLIC_IP=""
+  fi
+  
+  if [ -z "${INSTANCE_ID}" ] || [ "${INSTANCE_ID}" = "None" ]; then
     echo "❌ No instance found with tag:Name=${NAME_PREFIX}-vm" >&2
     echo "" >&2
     echo "The instance may not be running or may not exist yet." >&2
     echo "Run: ./scripts/setup/setup.sh ${PROVIDER}" >&2
     exit 1
   fi
-  
-  INSTANCE_ID=$(echo "${INSTANCE_DATA}" | awk '{print $1}')
-  PUBLIC_IP=$(echo "${INSTANCE_DATA}" | awk '{print $2}')
-  STATE=$(echo "${INSTANCE_DATA}" | awk '{print $3}')
   
   if [ "${PUBLIC_IP}" = "None" ] || [ -z "${PUBLIC_IP}" ]; then
     echo "⚠️  Instance found (${INSTANCE_ID}) but no public IP assigned yet." >&2
@@ -87,21 +116,11 @@ show_aws_access() {
   RDP_PASSWORD="${RDP_PASSWORD:-}"
   DEV_USERNAME="${DEV_USERNAME:-dev_admin}"
   
-  # Get Terragrunt outputs if available
-  cd "${ROOT_DIR}/infra/aws/terragrunt" 2>/dev/null || true
-  if command -v terragrunt >/dev/null 2>&1; then
-    TERRAFORM_OUTPUT=$(terragrunt output -json 2>/dev/null || echo "")
-    if [ -n "${TERRAFORM_OUTPUT}" ]; then
-      # Try to get outputs from Terraform
-      TERRAFORM_PUBLIC_IP=$(echo "${TERRAFORM_OUTPUT}" | jq -r '.public_ip.value // empty' 2>/dev/null || echo "")
-      TERRAFORM_RDP_HOST=$(echo "${TERRAFORM_OUTPUT}" | jq -r '.rdp_host.value // empty' 2>/dev/null || echo "")
-      TERRAFORM_SSH_CMD=$(echo "${TERRAFORM_OUTPUT}" | jq -r '.ssh_command.value // empty' 2>/dev/null || echo "")
-      
-      if [ -n "${TERRAFORM_PUBLIC_IP}" ] && [ "${TERRAFORM_PUBLIC_IP}" != "null" ]; then
-        PUBLIC_IP="${TERRAFORM_PUBLIC_IP}"
-      fi
-    fi
-  fi
+  # Note: We intentionally do NOT use Terraform/Terragrunt outputs for IP address
+  # because they can be stale after spot instance restarts (IP changes but instance ID persists).
+  # The AWS CLI query above always gets the current IP directly from AWS, which is more reliable.
+  # Terraform outputs are only updated on terraform apply/refresh, which doesn't happen automatically
+  # when spot instances restart with new IPs.
   
   # Display access information
   echo ""

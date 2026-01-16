@@ -43,10 +43,10 @@ Outputs will include:
 **Or use the combined setup-monitor-show-installpost script:**
 ```bash
 # AWS - Setup, monitor installation, install dev tools + GUI tools, and show access info
-./scripts/setup-monitor-show-installpost.sh aws
+./scripts/vm/setup-monitor-show-installpost.sh aws
 
 # Teardown and monitor termination
-./scripts/teardown-and-monitor.sh aws
+./scripts/vm/teardown-and-monitor.sh aws
 ```
 
 This script will:

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Setup infrastructure, monitor installation progress, install dev tools + GUI tools, and show access information
 # Usage:
-#   ./scripts/setup-monitor-show-installpost.sh aws
-#   ./scripts/setup-monitor-show-installpost.sh gcp
+#   ./scripts/vm/setup-monitor-show-installpost.sh aws
+#   ./scripts/vm/setup-monitor-show-installpost.sh gcp
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Source orchestrator (which sources all required libraries)
 source "${ROOT_DIR}/scripts/lib/orchestrator.sh"
