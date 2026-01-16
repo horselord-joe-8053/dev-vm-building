@@ -40,8 +40,7 @@ fi
 PROVIDER="$1"
 
 case "${PROVIDER}" in
-  aws) ;;
-  gcp) error "GCP not yet implemented for install-vm-tools";;
+  aws|gcp) ;;
   *) error "Invalid provider '${PROVIDER}'. Use 'aws' or 'gcp'.";;
 esac
 
@@ -60,8 +59,8 @@ DEV_USERNAME="${DEV_USERNAME:-dev}"
 # Find VM IP using common utility
 VM_IP=$(find_vm_ip "${PROVIDER}" "${ROOT_DIR}")
 
-# Find SSH key using common utility
-SSH_KEY=$(find_ssh_key "${NAME_PREFIX}")
+# Find SSH key using common utility (now requires provider parameter)
+SSH_KEY=$(find_ssh_key "${PROVIDER}" "${NAME_PREFIX}" "${ROOT_DIR}")
 
 log "Connecting to VM to install non-Node.js dev tools (Python, Docker, AWS CLI, PostgreSQL) and GUI tools (Chrome + Cursor)..."
 

@@ -15,6 +15,9 @@ source "${ROOT_DIR}/scripts/lib/orchestrator.sh"
 # Initialize orchestrator libraries
 init_orchestrator "${ROOT_DIR}"
 
+# Source VM common utilities
+source "${ROOT_DIR}/scripts/vm/common/vm_common.sh"
+
 # Parse and validate provider argument (mandatory)
 if [ "$#" -lt 1 ]; then
   echo "Usage: $0 <provider>" >&2
@@ -32,40 +35,6 @@ case "${PROVIDER}" in
     exit 1
     ;;
 esac
-
-# Function to get instance ID before teardown (for monitoring)
-get_instance_id_before_teardown() {
-  local provider="${1}"
-  local root_dir="${2}"
-  
-  # Load environment for AWS CLI access
-  load_environment "${root_dir}" "${provider}" || true
-  
-  if [ "${provider}" = "aws" ]; then
-    local name_prefix="${NAME_PREFIX:-ubuntu-gui}"
-    
-    local instance_data
-    instance_data=$(aws ec2 describe-instances \
-      --profile "${AWS_PROFILE:-default}" \
-      --region "${AWS_REGION:-us-east-1}" \
-      --filters "Name=instance-state-name,Values=running,stopping,stopped" \
-                 "Name=tag:Name,Values=${name_prefix}-vm" \
-      --query "Reservations[0].Instances[0].[InstanceId,PublicIpAddress]" \
-      --output text 2>/dev/null || echo "")
-    
-    if [ -n "${instance_data}" ] && [ "${instance_data}" != "None	None" ]; then
-      local instance_id=$(echo "${instance_data}" | awk '{print $1}')
-      local instance_ip=$(echo "${instance_data}" | awk '{print $2}')
-      
-      if [ "${instance_id}" != "None" ] && [ -n "${instance_id}" ]; then
-        echo "${instance_id}"
-        return 0
-      fi
-    fi
-  fi
-  
-  return 1
-}
 
 # Get instance ID before teardown (for monitoring)
 echo "Finding instance to teardown..."

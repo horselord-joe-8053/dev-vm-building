@@ -9,7 +9,7 @@ run_terraform() {
   local iac_tool="${4:-terragrunt}"
   
   # Source provider config to get INFRA_DIR_REL
-  local provider_config="${root_dir}/scripts/providers/${provider}.sh"
+  local provider_config="${root_dir}/scripts/providers/${provider}/config.sh"
   if [ ! -f "${provider_config}" ]; then
     echo "Error: Provider configuration not found: ${provider_config}" >&2
     return 1

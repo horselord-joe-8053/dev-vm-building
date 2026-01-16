@@ -8,7 +8,7 @@ env_to_tfvars() {
   local root_dir="${2}"
   
   # Source the provider configuration to get mappings
-  local provider_config="${root_dir}/scripts/providers/${provider}.sh"
+  local provider_config="${root_dir}/scripts/providers/${provider}/config.sh"
   if [ ! -f "${provider_config}" ]; then
     echo "Error: Provider configuration not found: ${provider_config}" >&2
     return 1
