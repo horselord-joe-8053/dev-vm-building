@@ -2,8 +2,8 @@
 # Create desktop shortcuts for installed applications on the VM
 # This is a standalone script that can be run independently.
 # Usage:
-#   ./scripts/vm/install_tools_hostside/create-desktop-shortcuts.sh aws
-#   ./scripts/vm/install_tools_hostside/create-desktop-shortcuts.sh gcp
+#   ./scripts/vm/install/tools/create-desktop-shortcuts.sh aws
+#   ./scripts/vm/install/tools/create-desktop-shortcuts.sh gcp
 
 set -euo pipefail
 
@@ -57,7 +57,7 @@ SSH_KEY=$(find_ssh_key "${PROVIDER}" "${NAME_PREFIX}" "${ROOT_DIR}")
 log "Connecting to VM to create desktop shortcuts for: ${SHORTCUT_CODES}"
 
 # Execute remote script with template variable substitution
-REMOTE_SCRIPT_PATH="${SCRIPT_DIR}/remoteside/content-create-desktop-shortcuts.sh"
+REMOTE_SCRIPT_PATH="${SCRIPT_DIR}/../remoteside/content-create-desktop-shortcuts.sh"
 execute_remote_script "${REMOTE_SCRIPT_PATH}" "${SSH_KEY}" "${VM_IP}" \
   "@DEV_USERNAME@=${DEV_USERNAME}" \
   "@SHORTCUT_CODES@=${SHORTCUT_CODES}"

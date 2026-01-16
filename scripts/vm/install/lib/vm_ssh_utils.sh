@@ -21,14 +21,14 @@ fi
 
 # Source VM common utilities (which provides provider-agnostic wrappers)
 # This assumes ROOT_DIR is set by the calling script
-if [ -n "${ROOT_DIR:-}" ] && [ -f "${ROOT_DIR}/scripts/vm/common/vm_common.sh" ]; then
-  source "${ROOT_DIR}/scripts/vm/common/vm_common.sh"
+if [ -n "${ROOT_DIR:-}" ] && [ -f "${ROOT_DIR}/scripts/vm/lifecycle/lib/vm_common.sh" ]; then
+  source "${ROOT_DIR}/scripts/vm/lifecycle/lib/vm_common.sh"
 else
   # Fallback: try to determine ROOT_DIR from script location
   SCRIPT_DIR_UTILS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  ROOT_DIR_UTILS="$(cd "${SCRIPT_DIR_UTILS}/../../.." && pwd)"
-  if [ -f "${ROOT_DIR_UTILS}/scripts/vm/common/vm_common.sh" ]; then
-    source "${ROOT_DIR_UTILS}/scripts/vm/common/vm_common.sh"
+  ROOT_DIR_UTILS="$(cd "${SCRIPT_DIR_UTILS}/../../../.." && pwd)"
+  if [ -f "${ROOT_DIR_UTILS}/scripts/vm/lifecycle/lib/vm_common.sh" ]; then
+    source "${ROOT_DIR_UTILS}/scripts/vm/lifecycle/lib/vm_common.sh"
     ROOT_DIR="${ROOT_DIR_UTILS}"
   else
     error "Cannot find vm_common.sh. ROOT_DIR must be set."

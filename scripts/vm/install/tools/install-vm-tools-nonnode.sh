@@ -18,17 +18,17 @@
 # on the VM.
 # 
 # Usage:
-#   ./scripts/vm/install_tools_hostside/install-vm-tools-nonnode.sh aws
-#   ./scripts/vm/install_tools_hostside/install-vm-tools-nonnode.sh gcp
+#   ./scripts/vm/install/tools/install-vm-tools-nonnode.sh aws
+#   ./scripts/vm/install/tools/install-vm-tools-nonnode.sh gcp
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-source "${ROOT_DIR}/scripts/lib/env_loader.sh"
-source "${ROOT_DIR}/scripts/lib/common.sh"
-source "${SCRIPT_DIR}/common/vm_ssh_utils.sh"
+source "${ROOT_DIR}/scripts/core/lib/env_loader.sh"
+source "${ROOT_DIR}/scripts/core/lib/common.sh"
+source "${SCRIPT_DIR}/../lib/vm_ssh_utils.sh"
 
 log() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] $*" >&2; }
 error() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] ERROR: $*" >&2; exit 1; }
@@ -65,7 +65,7 @@ SSH_KEY=$(find_ssh_key "${PROVIDER}" "${NAME_PREFIX}" "${ROOT_DIR}")
 log "Connecting to VM to install non-Node.js dev tools (Python, Docker, AWS CLI, PostgreSQL) and GUI tools (Chrome + Cursor)..."
 
 # Execute remote script with template variable substitution
-REMOTE_SCRIPT_PATH="${SCRIPT_DIR}/remoteside/content-install-tools-nonnode.sh"
+REMOTE_SCRIPT_PATH="${SCRIPT_DIR}/../remoteside/content-install-tools-nonnode.sh"
 execute_remote_script "${REMOTE_SCRIPT_PATH}" "${SSH_KEY}" "${VM_IP}" \
   "@PYTHON_VERSION@=${PYTHON_VERSION}" \
   "@DOCKER_VERSION_PREFIX@=${DOCKER_VERSION_PREFIX}" \
@@ -78,5 +78,5 @@ log "═════════════════════════
 log "✓ Installation complete!"
 log "════════════════════════════════════════════════════════════════"
 log "All non-Node.js dev tools and GUI tools have been successfully installed on the VM."
-log "Note: Node.js installation should be done separately via install_tools_hostside/install-vm-tools-node.sh"
+log "Note: Node.js installation should be done separately via install/tools/install-vm-tools-node.sh"
 

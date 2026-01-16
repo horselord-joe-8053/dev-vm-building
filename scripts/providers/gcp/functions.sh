@@ -80,3 +80,26 @@ install_post_setup_tools_gcp() {
   return 1
 }
 
+# Function: Monitor installation progress for GCP
+# Usage: monitor_installation_gcp <instance_id_or_ip> <root_dir>
+# Returns: 0 on success, 1 on error
+monitor_installation_gcp() {
+  local instance_id_or_ip="${1:-}"
+  local root_dir="${2}"
+  
+  echo "GCP monitoring not yet implemented" >&2
+  echo "You can SSH manually and run: tail -f /var/log/syslog | grep -i cloud-init" >&2
+  return 1
+}
+
+# Function: Monitor teardown progress for GCP
+# Usage: monitor_teardown_gcp <instance_id_or_ip> <root_dir>
+# Returns: 0 on success, 1 on error
+monitor_teardown_gcp() {
+  local instance_id_or_ip="${1:-}"
+  local root_dir="${2}"
+  
+  echo "GCP teardown monitoring not yet implemented." >&2
+  return 1
+}
+

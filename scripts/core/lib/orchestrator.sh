@@ -8,16 +8,16 @@ init_orchestrator() {
   
   # Source common utilities (only if not already sourced)
   if ! declare -f need >/dev/null 2>&1; then
-    source "${root_dir}/scripts/lib/common.sh"
+    source "${root_dir}/scripts/core/lib/common.sh"
   fi
   if ! declare -f load_environment >/dev/null 2>&1; then
-    source "${root_dir}/scripts/lib/env_loader.sh"
+    source "${root_dir}/scripts/core/lib/env_loader.sh"
   fi
   if ! declare -f env_to_tfvars >/dev/null 2>&1; then
-    source "${root_dir}/scripts/lib/env_to_tfvars.sh"
+    source "${root_dir}/scripts/core/lib/env_to_tfvars.sh"
   fi
   if ! declare -f run_terraform >/dev/null 2>&1; then
-    source "${root_dir}/scripts/lib/terraform_runner.sh"
+    source "${root_dir}/scripts/core/lib/terraform_runner.sh"
   fi
 }
 

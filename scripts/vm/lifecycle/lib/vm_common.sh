@@ -3,7 +3,7 @@
 # Generic wrappers that route to provider-specific functions
 #
 # Usage:
-#   source "${ROOT_DIR}/scripts/vm/common/vm_common.sh"
+#   source "${ROOT_DIR}/scripts/vm/lifecycle/lib/vm_common.sh"
 #   VM_IP=$(find_vm_ip "${PROVIDER}" "${ROOT_DIR}")
 #   SSH_KEY=$(find_ssh_key "${PROVIDER}" "${NAME_PREFIX}" "${ROOT_DIR}")
 
@@ -47,8 +47,8 @@ find_vm_ip() {
   local root_dir="${2}"
   
   # Load environment to get provider-specific variables
-  if [ -f "${root_dir}/scripts/lib/env_loader.sh" ]; then
-    source "${root_dir}/scripts/lib/env_loader.sh"
+  if [ -f "${root_dir}/scripts/core/lib/env_loader.sh" ]; then
+    source "${root_dir}/scripts/core/lib/env_loader.sh"
     load_environment "${root_dir}" "${provider}" || true
   fi
   
@@ -108,8 +108,8 @@ get_instance_id_before_teardown() {
   local root_dir="${2}"
   
   # Load environment to get provider-specific variables
-  if [ -f "${root_dir}/scripts/lib/env_loader.sh" ]; then
-    source "${root_dir}/scripts/lib/env_loader.sh"
+  if [ -f "${root_dir}/scripts/core/lib/env_loader.sh" ]; then
+    source "${root_dir}/scripts/core/lib/env_loader.sh"
     load_environment "${root_dir}" "${provider}" || true
   fi
   
@@ -136,8 +136,8 @@ wait_for_instance() {
   local root_dir="${2}"
   
   # Load environment to get provider-specific variables
-  if [ -f "${root_dir}/scripts/lib/env_loader.sh" ]; then
-    source "${root_dir}/scripts/lib/env_loader.sh"
+  if [ -f "${root_dir}/scripts/core/lib/env_loader.sh" ]; then
+    source "${root_dir}/scripts/core/lib/env_loader.sh"
     load_environment "${root_dir}" "${provider}" || true
   fi
   
@@ -163,8 +163,8 @@ show_access_info() {
   local root_dir="${2}"
   
   # Load environment to get provider-specific variables
-  if [ -f "${root_dir}/scripts/lib/env_loader.sh" ]; then
-    source "${root_dir}/scripts/lib/env_loader.sh"
+  if [ -f "${root_dir}/scripts/core/lib/env_loader.sh" ]; then
+    source "${root_dir}/scripts/core/lib/env_loader.sh"
     load_environment "${root_dir}" "${provider}" || true
   fi
   
@@ -197,6 +197,52 @@ install_post_setup_tools() {
       ;;
     gcp)
       install_post_setup_tools_gcp "${root_dir}"
+      ;;
+    *)
+      error "Unsupported provider: ${provider}"
+      ;;
+  esac
+}
+
+# Generic wrapper: Monitor installation progress
+# Usage: monitor_installation <provider> <instance_id_or_ip> <root_dir>
+monitor_installation() {
+  local provider="${1}"
+  local instance_id_or_ip="${2:-}"
+  local root_dir="${3}"
+  
+  load_environment "${root_dir}" "${provider}" || true
+  load_provider "${provider}" "${root_dir}"
+  
+  case "${provider}" in
+    aws)
+      monitor_installation_aws "${instance_id_or_ip}" "${root_dir}"
+      ;;
+    gcp)
+      monitor_installation_gcp "${instance_id_or_ip}" "${root_dir}"
+      ;;
+    *)
+      error "Unsupported provider: ${provider}"
+      ;;
+  esac
+}
+
+# Generic wrapper: Monitor teardown progress
+# Usage: monitor_teardown <provider> <instance_id_or_ip> <root_dir>
+monitor_teardown() {
+  local provider="${1}"
+  local instance_id_or_ip="${2:-}"
+  local root_dir="${3}"
+  
+  load_environment "${root_dir}" "${provider}" || true
+  load_provider "${provider}" "${root_dir}"
+  
+  case "${provider}" in
+    aws)
+      monitor_teardown_aws "${instance_id_or_ip}" "${root_dir}"
+      ;;
+    gcp)
+      monitor_teardown_gcp "${instance_id_or_ip}" "${root_dir}"
       ;;
     *)
       error "Unsupported provider: ${provider}"

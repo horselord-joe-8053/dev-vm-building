@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Show access information for the provisioned VM
-# Usage: ./scripts/vm/show-access-info.sh <provider>
+# Usage: ./scripts/vm/lifecycle/show-access-info.sh <provider>
 
 set -euo pipefail
 
@@ -8,11 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Source required libraries
-source "${ROOT_DIR}/scripts/lib/env_loader.sh"
-source "${ROOT_DIR}/scripts/lib/common.sh"
+source "${ROOT_DIR}/scripts/core/lib/env_loader.sh"
+source "${ROOT_DIR}/scripts/core/lib/common.sh"
 
 # Source VM common utilities
-source "${ROOT_DIR}/scripts/vm/common/vm_common.sh"
+source "${ROOT_DIR}/scripts/vm/lifecycle/lib/vm_common.sh"
 
 # Parse arguments
 if [ "$#" -lt 1 ]; then

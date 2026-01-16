@@ -4,14 +4,14 @@ set -euo pipefail
 # Thin wrapper script for tearing down infrastructure
 # Delegates to the orchestrator library for actual work
 # Usage:
-#   ./scripts/teardown/teardown.sh aws
-#   ./scripts/teardown/teardown.sh gcp
+#   ./scripts/core/teardown.sh aws
+#   ./scripts/core/teardown.sh gcp
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Source orchestrator (which sources all required libraries)
-source "${ROOT_DIR}/scripts/lib/orchestrator.sh"
+source "${ROOT_DIR}/scripts/core/lib/orchestrator.sh"
 
 # Initialize orchestrator libraries
 init_orchestrator "${ROOT_DIR}"

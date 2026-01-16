@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Teardown infrastructure and monitor termination progress
 # Usage:
-#   ./scripts/vm/teardown-and-monitor.sh aws
-#   ./scripts/vm/teardown-and-monitor.sh gcp
+#   ./scripts/orchestration/teardown-full.sh aws
+#   ./scripts/orchestration/teardown-full.sh gcp
 
 set -euo pipefail
 
@@ -10,13 +10,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Source orchestrator (which sources all required libraries)
-source "${ROOT_DIR}/scripts/lib/orchestrator.sh"
+source "${ROOT_DIR}/scripts/core/lib/orchestrator.sh"
 
 # Initialize orchestrator libraries
 init_orchestrator "${ROOT_DIR}"
 
 # Source VM common utilities
-source "${ROOT_DIR}/scripts/vm/common/vm_common.sh"
+source "${ROOT_DIR}/scripts/vm/lifecycle/lib/vm_common.sh"
 
 # Parse and validate provider argument (mandatory)
 if [ "$#" -lt 1 ]; then
@@ -68,8 +68,8 @@ echo ""
 
 # Run monitor script with instance ID if we have it
 if [ -n "${INSTANCE_ID_BEFORE}" ]; then
-  exec "${ROOT_DIR}/scripts/monitor/monitor-teardown.sh" "${PROVIDER}" "${INSTANCE_ID_BEFORE}"
+  exec "${ROOT_DIR}/scripts/vm/monitor/monitor-teardown.sh" "${PROVIDER}" "${INSTANCE_ID_BEFORE}"
 else
-  exec "${ROOT_DIR}/scripts/monitor/monitor-teardown.sh" "${PROVIDER}"
+  exec "${ROOT_DIR}/scripts/vm/monitor/monitor-teardown.sh" "${PROVIDER}"
 fi
 

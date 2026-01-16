@@ -19,17 +19,17 @@
 # installation script on the VM.
 # 
 # Usage:
-#   ./scripts/vm/install_tools_hostside/install-vm-tools-node.sh aws
-#   ./scripts/vm/install_tools_hostside/install-vm-tools-node.sh gcp
+#   ./scripts/vm/install/tools/install-vm-tools-node.sh aws
+#   ./scripts/vm/install/tools/install-vm-tools-node.sh gcp
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-source "${ROOT_DIR}/scripts/lib/env_loader.sh"
-source "${ROOT_DIR}/scripts/lib/common.sh"
-source "${SCRIPT_DIR}/common/vm_ssh_utils.sh"
+source "${ROOT_DIR}/scripts/core/lib/env_loader.sh"
+source "${ROOT_DIR}/scripts/core/lib/common.sh"
+source "${SCRIPT_DIR}/../lib/vm_ssh_utils.sh"
 
 log() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] $*" >&2; }
 error() { echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")] ERROR: $*" >&2; exit 1; }
@@ -64,7 +64,7 @@ log "Connecting to VM to install Node.js ${NODE_VERSION} and npm ${NPM_VERSION}.
 log "Note: This uses binary-only installation (no source builds) with fallback to NodeSource repository."
 
 # Execute remote script with template variable substitution
-REMOTE_SCRIPT_PATH="${SCRIPT_DIR}/remoteside/content-install-vm-tools-node.sh"
+REMOTE_SCRIPT_PATH="${SCRIPT_DIR}/../remoteside/content-install-vm-tools-node.sh"
 execute_remote_script "${REMOTE_SCRIPT_PATH}" "${SSH_KEY}" "${VM_IP}" \
   "@NODE_VERSION@=${NODE_VERSION}" \
   "@NPM_VERSION@=${NPM_VERSION}"
