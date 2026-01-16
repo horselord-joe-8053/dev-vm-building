@@ -42,12 +42,18 @@ Outputs will include:
 
 **Or use the combined setup-monitor-show-installpost script:**
 ```bash
-# AWS - Setup, monitor installation, and show access info
+# AWS - Setup, monitor installation, install dev tools + GUI tools, and show access info
 ./scripts/setup-monitor-show-installpost.sh aws
 
 # Teardown and monitor termination
 ./scripts/teardown-and-monitor.sh aws
 ```
+
+This script will:
+1. Provision the VM infrastructure (Terraform/Terragrunt)
+2. Monitor the VM's cloud-init installation progress
+3. Install dev tools (Python, Node.js, Docker, AWS CLI, PostgreSQL) and GUI tools (Chrome, Cursor)
+4. Display SSH and RDP access information
 
 ## RDP
 Open Microsoft Remote Desktop and connect to:

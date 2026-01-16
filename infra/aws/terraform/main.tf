@@ -84,16 +84,8 @@ data "aws_subnets" "default" {
 
 locals {
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
-    dev_username         = var.dev_username
-    rdp_password         = var.rdp_password
-    git_version          = var.git_version
-    python_version       = var.python_version
-    node_version         = var.node_version
-    npm_version          = var.npm_version
-    docker_version_prefix= var.docker_version_prefix
-    awscli_version       = var.awscli_version
-    psql_major           = var.psql_major
-    cursor_channel       = var.cursor_channel
+    dev_username = var.dev_username
+    rdp_password = var.rdp_password
   })
 }
 

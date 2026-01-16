@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Setup infrastructure, monitor installation progress, show access information, and install GUI tools
+# Setup infrastructure, monitor installation progress, install dev tools + GUI tools, and show access information
 # Usage:
 #   ./scripts/setup-monitor-show-installpost.sh aws
 #   ./scripts/setup-monitor-show-installpost.sh gcp
@@ -114,25 +114,47 @@ echo ""
 # Run monitor script (which will tail the logs)
 "${ROOT_DIR}/scripts/monitor/monitor-installation.sh" "${PROVIDER}"
 
-# After monitoring completes, show access information
+# After monitoring completes, install dev tools + GUI tools
+# Note: We install non-Node.js tools first, then Node.js separately due to special requirements
+if [ "${PROVIDER}" = "aws" ]; then
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "Installing non-Node.js dev tools and GUI tools on the VM..."
+  echo "════════════════════════════════════════════════════════════════"
+  echo "This will install: Python, Docker, AWS CLI, PostgreSQL, Chrome, and Cursor"
+  echo ""
+  if ! "${ROOT_DIR}/scripts/vm/install_tools_hostside/install-vm-tools-nonnode.sh" "${PROVIDER}"; then
+    echo "Warning: Non-Node.js dev tools and GUI tools installation failed. Core VM setup is still complete." >&2
+  fi
+  
+  # Install Node.js separately (requires special attention: binary-only, nvm permissions, fallback handling)
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "Installing Node.js and npm on the VM..."
+  echo "════════════════════════════════════════════════════════════════"
+  echo "This uses binary-only installation (no source builds) with proper permission handling."
+  echo ""
+  if ! "${ROOT_DIR}/scripts/vm/install_tools_hostside/install-vm-tools-node.sh" "${PROVIDER}"; then
+    echo "Warning: Node.js installation failed. Other tools are still installed." >&2
+  fi
+  
+  # Create desktop shortcuts for installed applications
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "Creating desktop shortcuts for installed applications..."
+  echo "════════════════════════════════════════════════════════════════"
+  echo ""
+  if ! "${ROOT_DIR}/scripts/vm/install_tools_hostside/create-desktop-shortcuts.sh" "${PROVIDER}"; then
+    echo "Warning: Desktop shortcuts creation failed. Applications are still installed." >&2
+  fi
+fi
+
+# Show access information after all installations are complete
 echo ""
 echo "════════════════════════════════════════════════════════════════"
-echo "Installation monitoring complete. Showing access information..."
+echo "Installation complete. Showing access information..."
 echo "════════════════════════════════════════════════════════════════"
 echo ""
 
 # Show access information
 "${ROOT_DIR}/scripts/vm/show-access-info.sh" "${PROVIDER}"
-
-
-# Optionally install GUI tools (Chrome + Cursor) after core setup is done
-if [ "${PROVIDER}" = "aws" ]; then
-  echo ""
-  echo "════════════════════════════════════════════════════════════════"
-  echo "Installing GUI tools (Chrome + Cursor) on the VM..."
-  echo "════════════════════════════════════════════════════════════════"
-  echo ""
-  if ! "${ROOT_DIR}/scripts/vm/install-gui-tools.sh" "${PROVIDER}"; then
-    echo "Warning: GUI tools installation failed. Core VM setup is still complete." >&2
-  fi
-fi
