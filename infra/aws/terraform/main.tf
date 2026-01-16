@@ -92,6 +92,8 @@ locals {
 resource "aws_instance" "this" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type           = var.instance_type
+  # Use first available subnet. For better Spot availability, consider specifying
+  # a preferred availability_zone or trying multiple subnets if first fails.
   subnet_id               = element(data.aws_subnets.default.ids, 0)
   vpc_security_group_ids  = [aws_security_group.this.id]
   key_name                = aws_key_pair.this.key_name
@@ -111,15 +113,19 @@ resource "aws_instance" "this" {
       spot_options {
         instance_interruption_behavior = "stop"
         spot_instance_type             = "persistent"
+        # max_price: If set, AWS will only fulfill Spot request if price is below this.
+        # Setting a reasonable value (e.g., 0.10 for t3.large) can help avoid waiting
+        # for very low prices and may improve fulfillment speed.
         max_price                      = var.spot_max_price != "" ? var.spot_max_price : null
       }
     }
   }
 
-  # Timeouts: Spot instances can take time to fulfill, and user_data script
-  # installs many packages (Python, Node, Docker, etc.) which can take 5-10 minutes
+  # Timeouts: Spot instances can take time to fulfill during high demand periods.
+  # Increased timeout to allow more time for AWS to find Spot capacity.
+  # user_data script installs base packages which typically takes 2-5 minutes.
   timeouts {
-    create = "20m"  # Allow up to 20 minutes for instance creation
+    create = "45m"  # Allow up to 45 minutes for Spot instance fulfillment
     update = "10m"
     delete = "10m"
   }

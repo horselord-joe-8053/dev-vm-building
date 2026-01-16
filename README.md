@@ -29,25 +29,31 @@ Outputs will include:
 
 ## Quick start (Setup script, Terragrunt)
 
+### Recommended: Full Automated Setup
 ```bash
-# AWS
-./scripts/setup/setup.sh aws
-# later
-./scripts/teardown/teardown.sh aws
-
-# GCP
-./scripts/setup/setup.sh gcp
-./scripts/teardown/teardown.sh gcp
-```
-
-**Or use the combined setup-monitor-show-installpost script:**
-```bash
-# AWS - Setup, monitor installation, install dev tools + GUI tools, and show access info
-./scripts/vm/setup-monitor-show-installpost.sh aws
+# AWS - Full setup: infrastructure + monitor + install tools + show access
+./scripts/orchestration/setup-full.sh aws
 
 # Teardown and monitor termination
-./scripts/vm/teardown-and-monitor.sh aws
+./scripts/orchestration/teardown-full.sh aws
+
+# GCP
+./scripts/orchestration/setup-full.sh gcp
+./scripts/orchestration/teardown-full.sh gcp
 ```
+
+### Other Options
+```bash
+# Infrastructure only (no tool installation, no monitoring)
+./scripts/core/setup.sh aws
+./scripts/core/teardown.sh aws
+
+# Then optionally monitor or install tools separately:
+./scripts/vm/monitor/monitor-installation.sh aws
+./scripts/vm/install/tools/install-vm-tools-nonnode.sh aws
+```
+
+> **📖 For complete documentation of all entry points, see [ENTRY_POINTS.md](ENTRY_POINTS.md)**
 
 This script will:
 1. Provision the VM infrastructure (Terraform/Terragrunt)

@@ -35,7 +35,7 @@ variable "use_spot" {
 }
 
 variable "spot_max_price" {
-  description = "Optional max Spot price (empty means on-demand cap)."
+  description = "Optional max Spot price per hour (e.g., '0.10'). Empty means on-demand cap. Setting a reasonable value can help avoid waiting for very low Spot prices and may improve fulfillment speed."
   type        = string
   default     = ""
 }
