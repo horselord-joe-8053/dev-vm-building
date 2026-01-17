@@ -41,6 +41,11 @@ AWSCLI_VER="@AWSCLI_VERSION@"
 PSQL_MAJOR="@PSQL_MAJOR@"
 DEV_USER="@DEV_USERNAME@"
 
+# Git configuration variables (passed from host via template substitution, optional)
+GIT_USER_NAME="@GIT_USER_NAME@"
+GIT_USER_EMAIL="@GIT_USER_EMAIL@"
+GIT_PAT="@GIT_PAT@"
+
 # Wait for apt lock to be released
 wait_for_apt_lock() {
   local max_wait=300  # 5 minutes
@@ -304,6 +309,64 @@ log "✓ Step 6/6 complete: Cursor"
 
 log ""
 log "════════════════════════════════════════════════════════════════"
+log "Step 7/7: Git Configuration"
+log "════════════════════════════════════════════════════════════════"
+# Configure git only if git configuration variables are provided
+if [ -n "${GIT_USER_NAME}" ] && [ -n "${GIT_USER_EMAIL}" ]; then
+  log "Configuring git for user ${DEV_USER}..."
+  
+  # Verify git is installed
+  if ! command -v git >/dev/null 2>&1; then
+    log "Warning: git is not installed. Skipping git configuration."
+  else
+    # Configure git user name and email as the dev user
+    log "Setting git user.name to: ${GIT_USER_NAME}"
+    sudo -u "${DEV_USER}" git config --global user.name "${GIT_USER_NAME}" || error "Failed to set git user.name"
+    
+    log "Setting git user.email to: ${GIT_USER_EMAIL}"
+    sudo -u "${DEV_USER}" git config --global user.email "${GIT_USER_EMAIL}" || error "Failed to set git user.email"
+    
+    # Configure git credential helper if PAT is provided
+    if [ -n "${GIT_PAT}" ]; then
+      log "Configuring git credential helper with Personal Access Token..."
+      
+      # Set up credential helper to store credentials
+      sudo -u "${DEV_USER}" git config --global credential.helper store || error "Failed to configure git credential helper"
+      
+      # Create .git-credentials file with PAT for GitHub HTTPS authentication
+      GIT_CREDENTIALS_FILE="/home/${DEV_USER}/.git-credentials"
+      # Format: https://username:token@github.com
+      # For GitHub, username can be anything when using PAT, but using the actual username is cleaner
+      GITHUB_USERNAME="${GIT_USER_NAME}"
+      echo "https://${GITHUB_USERNAME}:${GIT_PAT}@github.com" | sudo -u "${DEV_USER}" tee "${GIT_CREDENTIALS_FILE}" >/dev/null
+      sudo chmod 600 "${GIT_CREDENTIALS_FILE}"
+      sudo chown "${DEV_USER}:${DEV_USER}" "${GIT_CREDENTIALS_FILE}"
+      
+      log "Git credentials configured successfully."
+    else
+      log "No Personal Access Token provided. Git credential helper not configured."
+      log "Note: You may need to manually configure git authentication for private repositories."
+    fi
+    
+    # Verify git configuration
+    GIT_NAME=$(sudo -u "${DEV_USER}" git config --global user.name || echo "")
+    GIT_EMAIL=$(sudo -u "${DEV_USER}" git config --global user.email || echo "")
+    log "Git configuration verified:"
+    log "  - user.name: ${GIT_NAME}"
+    log "  - user.email: ${GIT_EMAIL}"
+    if [ -n "${GIT_PAT}" ]; then
+      log "  - credential helper: configured"
+    fi
+  fi
+  log "✓ Step 7/7 complete: Git Configuration"
+else
+  log "Git configuration variables not provided (REMOTE_VM_GIT_USER_NAME, REMOTE_VM_GIT_USER_EMAIL)."
+  log "Skipping git configuration. Git will use default settings."
+  log "✓ Step 7/7 complete: Git Configuration (skipped)"
+fi
+
+log ""
+log "════════════════════════════════════════════════════════════════"
 log "✓ All installations complete!"
 log "════════════════════════════════════════════════════════════════"
 log "Installed:"
@@ -313,5 +376,11 @@ log "  - AWS CLI v2 (${AWSCLI_VER})"
 log "  - PostgreSQL client (${PSQL_MAJOR})"
 log "  - Google Chrome"
 log "  - Cursor"
+if [ -n "${GIT_USER_NAME}" ] && [ -n "${GIT_USER_EMAIL}" ]; then
+  log "  - Git configuration (user: ${GIT_USER_NAME}, email: ${GIT_USER_EMAIL})"
+  if [ -n "${GIT_PAT}" ]; then
+    log "    with GitHub Personal Access Token authentication"
+  fi
+fi
 log "════════════════════════════════════════════════════════════════"
 

@@ -56,6 +56,11 @@ AWSCLI_VERSION="${AWSCLI_VERSION:-2.32.16}"
 PSQL_MAJOR="${PSQL_MAJOR:-16}"
 DEV_USERNAME="${DEV_USERNAME:-dev}"
 
+# Load Git configuration variables (optional, for git setup on VM)
+REMOTE_VM_GIT_USER_NAME="${REMOTE_VM_GIT_USER_NAME:-}"
+REMOTE_VM_GIT_USER_EMAIL="${REMOTE_VM_GIT_USER_EMAIL:-}"
+REMOTE_VM_GIT_PAT="${REMOTE_VM_GIT_PAT:-}"
+
 # Find VM IP using common utility
 VM_IP=$(find_vm_ip "${PROVIDER}" "${ROOT_DIR}")
 
@@ -71,7 +76,10 @@ execute_remote_script "${REMOTE_SCRIPT_PATH}" "${SSH_KEY}" "${VM_IP}" \
   "@DOCKER_VERSION_PREFIX@=${DOCKER_VERSION_PREFIX}" \
   "@AWSCLI_VERSION@=${AWSCLI_VERSION}" \
   "@PSQL_MAJOR@=${PSQL_MAJOR}" \
-  "@DEV_USERNAME@=${DEV_USERNAME}"
+  "@DEV_USERNAME@=${DEV_USERNAME}" \
+  "@GIT_USER_NAME@=${REMOTE_VM_GIT_USER_NAME}" \
+  "@GIT_USER_EMAIL@=${REMOTE_VM_GIT_USER_EMAIL}" \
+  "@GIT_PAT@=${REMOTE_VM_GIT_PAT}"
 
 log ""
 log "════════════════════════════════════════════════════════════════"
