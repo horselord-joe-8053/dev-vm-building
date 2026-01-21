@@ -18,7 +18,10 @@ resource "google_compute_firewall" "allow_ssh_rdp" {
   name    = "${var.name_prefix}-allow-ssh-rdp"
   network = google_compute_network.vpc.name
 
-  allow { protocol = "tcp" ports = ["22", "3389"] }
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "3389"]
+  }
 
   source_ranges = [var.allowed_cidr]
   target_tags   = ["${var.name_prefix}-vm"]
@@ -67,5 +70,7 @@ resource "google_compute_instance" "this" {
     automatic_restart  = var.use_spot ? false : true
   }
 
-  service_account { scopes = ["cloud-platform"] }
+  service_account {
+    scopes = ["cloud-platform"]
+  }
 }

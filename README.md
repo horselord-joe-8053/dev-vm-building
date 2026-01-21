@@ -92,16 +92,16 @@ cp .env.example .env
 **Option 2: Extract from existing .env**
 ```bash
 # Extract AWS-related variables from your main .env
-./scripts/env_tools/generate_aws_env_from_dotenv.sh /path/to/your/.env .env.aws.local
+./scripts/tools/env/aws/generate_env_from_dotenv.sh /path/to/your/.env .env.aws.local
 # The setup script will automatically use .env.aws.local
-./scripts/setup/setup.sh aws
+./scripts/core/setup.sh aws
 ```
 
 **Option 3: Extract GCP variables**
 ```bash
 # Extract GCP-related variables
-./scripts/env_tools/generate_gcp_env_from_dotenv.sh /path/to/your/.env .env.gcp.local
-./scripts/setup/setup.sh gcp
+./scripts/tools/env/gcp/generate_env_from_dotenv.sh /path/to/your/.env .env.gcp.local
+./scripts/core/setup.sh gcp
 ```
 
 This keeps secrets out of git history and makes runs repeatable.
